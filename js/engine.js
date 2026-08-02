@@ -2,18 +2,16 @@ window.KID = window.KID || {};
 
 window.KID.version = "0.3.1";
 
-window.KID.Engine = {
-    start() {
-        console.log("KID Engine started.");
-    },
+window.KID.ready =
+  Boolean(window.KID.Engine) &&
+  typeof window.KID.Engine.start === "function";
 
-    about() {
-        return {
-            name: "Krueger Solitaire",
-            developer: "Krueger Interactive Developments",
-            version: window.KID.version
-        };
-    }
-};
+console.log(
+  `Krueger Solitaire ${window.KID.version} loaded successfully`
+);
 
-window.KID.Engine.start();
+console.log(
+  window.KID.ready
+    ? "KID Engine connection verified"
+    : "KID Engine connection failed"
+);
