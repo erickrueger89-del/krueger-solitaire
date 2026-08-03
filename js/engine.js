@@ -7,6 +7,9 @@ window.KID.Engine = {
 
   start() {
     const deck = window.KID.Cards.createDeck();
+    if (!window.KID.Cards.validateDeck(deck)) {
+    throw new Error("KID deck validation failed.");
+}
     const shuffledDeck = window.KID.Shuffle.shuffle(deck);
 
     this.state = window.KID.Deal.create(shuffledDeck);
@@ -21,7 +24,10 @@ window.KID.Render.draw(this.state);
 },
 
 newGame() {
-    const deck = window.KID.Cards.createDeck();
+    const deck =  window.KID.Cards.createDeck();
+      if (!window.KID.Cards.validateDeck(deck)) {
+  throw new Error("KID deck validation failed.");
+}
     const shuffledDeck = window.KID.Shuffle.shuffle(deck);
 
     this.state = window.KID.Deal.create(shuffledDeck);
