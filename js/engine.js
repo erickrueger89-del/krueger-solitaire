@@ -2,16 +2,31 @@ window.KID = window.KID || {};
 
 window.KID.version = "0.3.1";
 
-window.KID.ready =
-  Boolean(window.KID.Engine) &&
-  typeof window.KID.Engine.start === "function";
+window.KID.Engine = {
+  state: null,
 
-console.log(
-  `Krueger Solitaire ${window.KID.version} loaded successfully`
-);
+  start() {
+    const deck = window.KID.Cards.createDeck();
+    const shuffledDeck = window.KID.Shuffle.shuffle(deck);
 
-console.log(
-  window.KID.ready
-    ? "KID Engine connection verified"
-    : "KID Engine connection failed"
-);
+    this.state = window.KID.Deal.create(shuffledDeck);
+
+    console.log("KID Engine started.");
+    console.log(
+      "Tableau columns:",
+      this.state.tableau.length,
+      "Stock cards:",
+      this.state.stock.length
+    );
+  },
+
+  about() {
+    return {
+      name: "Krueger Solitaire",
+      developer: "Krueger Interactive Developments",
+      version: window.KID.version
+    };
+  }
+};
+
+window.KID.Engine.start();
