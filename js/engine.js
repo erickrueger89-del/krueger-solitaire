@@ -1,6 +1,6 @@
 window.KID = window.KID || {};
 
-window.KID.version = "0.4.3";
+window.KID.version = "0.5.0";
 
 window.KID.Engine = {
   state: null,
