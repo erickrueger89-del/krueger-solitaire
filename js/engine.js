@@ -10,7 +10,7 @@ window.KID.Engine = {
     const shuffledDeck = window.KID.Shuffle.shuffle(deck);
 
     this.state = window.KID.Deal.create(shuffledDeck);
-
+window.KID.Render.draw(this.state);
     console.log("KID Engine started.");
     console.log(
         "Tableau columns:",
@@ -25,7 +25,7 @@ newGame() {
     const shuffledDeck = window.KID.Shuffle.shuffle(deck);
 
     this.state = window.KID.Deal.create(shuffledDeck);
-
+window.KID.Render.draw(this.state);
     return this.state;
     },
     
