@@ -1,301 +1,29 @@
 window.KID = window.KID || {};
 
-window.KID.version = "0.4.2";
+window.KID.version = "0.4.3";
 
 window.KID.App = {
   diagnostics: null,
-  ruleTests: null,
-  actionTests: null,
   ready: false,
 
-  createTestCard(
-    rank,
-    suit,
-    color,
-    faceUp = true
-  ) {
-    return {
-      rank,
-      suit,
-      color,
-      faceUp
-    };
-  },
+  saveAfterAction(result) {
+    if (
+      result === false ||
+      result === null
+    ) {
+      return result;
+    }
 
-  runRuleTests() {
-    const blackKing =
-      this.createTestCard(
-        "K",
-        "♠",
-        "black"
-      );
+    window.KID.Engine
+      .recordMove();
 
-    const redQueen =
-      this.createTestCard(
-        "Q",
-        "♥",
-        "red"
-      );
+    window.KID.Engine
+      .render();
 
-    const blackJack =
-      this.createTestCard(
-        "J",
-        "♣",
-        "black"
-      );
+    window.KID.Engine
+      .save();
 
-    const aceHearts =
-      this.createTestCard(
-        "A",
-        "♥",
-        "red"
-      );
-
-    const twoHearts =
-      this.createTestCard(
-        "2",
-        "♥",
-        "red"
-      );
-
-    const twoDiamonds =
-      this.createTestCard(
-        "2",
-        "♦",
-        "red"
-      );
-
-    const hiddenTen =
-      this.createTestCard(
-        "10",
-        "♠",
-        "black",
-        false
-      );
-
-    this.ruleTests = {
-      kingToEmptyTableau:
-        window.KID.Moves
-          .canMoveToTableau(
-            blackKing,
-            null
-          ) === true,
-
-      queenToKing:
-        window.KID.Moves
-          .canMoveToTableau(
-            redQueen,
-            blackKing
-          ) === true,
-
-      jackToQueen:
-        window.KID.Moves
-          .canMoveToTableau(
-            blackJack,
-            redQueen
-          ) === true,
-
-      aceToEmptyFoundation:
-        window.KID.Moves
-          .canMoveToFoundation(
-            aceHearts,
-            []
-          ) === true,
-
-      twoToMatchingFoundation:
-        window.KID.Moves
-          .canMoveToFoundation(
-            twoHearts,
-            [aceHearts]
-          ) === true,
-
-      wrongSuitRejected:
-        window.KID.Moves
-          .canMoveToFoundation(
-            twoDiamonds,
-            [aceHearts]
-          ) === false,
-
-      hiddenCardRejected:
-        window.KID.Moves
-          .canMoveToTableau(
-            hiddenTen,
-            redQueen
-          ) === false,
-
-      validTableauSequence:
-        window.KID.Moves
-          .isValidTableauSequence([
-            blackKing,
-            redQueen,
-            blackJack
-          ]) === true
-    };
-
-    return Object.values(
-      this.ruleTests
-    ).every(Boolean);
-  },
-
-  runActionTests() {
-    const stockState =
-      window.KID.Engine
-        .createState();
-
-    const startingStock =
-      stockState.stock.length;
-
-    window.KID.Actions
-      .drawFromStock(stockState);
-
-    const wasteTop =
-      window.KID.Actions
-        .getWasteTop(stockState);
-
-    const tableauState = {
-      stock: [],
-      waste: [],
-      foundations: {
-        "♠": [],
-        "♥": [],
-        "♦": [],
-        "♣": []
-      },
-      tableau: [
-        [
-          this.createTestCard(
-            "K",
-            "♠",
-            "black"
-          )
-        ],
-        [
-          this.createTestCard(
-            "Q",
-            "♥",
-            "red"
-          ),
-          this.createTestCard(
-            "J",
-            "♣",
-            "black"
-          )
-        ],
-        [],
-        [],
-        [],
-        [],
-        []
-      ]
-    };
-
-    const movedStack =
-      window.KID.Actions
-        .moveTableauStack(
-          tableauState,
-          1,
-          0,
-          0
-        );
-
-    const foundationState = {
-      stock: [],
-      waste: [],
-      foundations: {
-        "♠": [],
-        "♥": [],
-        "♦": [],
-        "♣": []
-      },
-      tableau: [
-        [
-          this.createTestCard(
-            "A",
-            "♥",
-            "red"
-          )
-        ],
-        [],
-        [],
-        [],
-        [],
-        [],
-        []
-      ]
-    };
-
-    const movedToFoundation =
-      window.KID.Actions
-        .moveTableauToFoundation(
-          foundationState,
-          0
-        );
-
-    const winningState = {
-      stock: [],
-      waste: [],
-      tableau: [
-        [],
-        [],
-        [],
-        [],
-        [],
-        [],
-        []
-      ],
-      foundations: {
-        "♠": Array(13).fill({}),
-        "♥": Array(13).fill({}),
-        "♦": Array(13).fill({}),
-        "♣": Array(13).fill({})
-      }
-    };
-
-    this.actionTests = {
-      stockStartedWith24:
-        startingStock === 24,
-
-      stockReducedAfterDraw:
-        stockState.stock.length === 23,
-
-      wasteIncreasedAfterDraw:
-        stockState.waste.length === 1,
-
-      wasteTopAvailable:
-        Boolean(wasteTop),
-
-      wasteTopFaceUp:
-        wasteTop?.faceUp === true,
-
-      tableauStackMoved:
-        movedStack === true,
-
-      destinationReceivedStack:
-        tableauState
-          .tableau[0]
-          .length === 3,
-
-      sourceColumnEmptied:
-        tableauState
-          .tableau[1]
-          .length === 0,
-
-      aceMovedToFoundation:
-        movedToFoundation === true,
-
-      foundationContainsAce:
-        foundationState
-          .foundations["♥"]
-          .length === 1,
-
-      winDetected:
-        window.KID.Actions
-          .isWin(winningState) === true
-    };
-
-    return Object.values(
-      this.actionTests
-    ).every(Boolean);
+    return result;
   },
 
   runDiagnostics() {
@@ -305,12 +33,6 @@ window.KID.App = {
     const renderSnapshot =
       window.KID.Engine
         ?.lastRender;
-
-    const rulesValid =
-      this.runRuleTests();
-
-    const actionsValid =
-      this.runActionTests();
 
     this.diagnostics = {
       version:
@@ -336,30 +58,19 @@ window.KID.App = {
             "function" &&
           typeof window.KID.Deal
             ?.validateState ===
+            "function" &&
+          typeof window.KID.Deal
+            ?.validateInitialDeal ===
             "function",
 
         moves:
           typeof window.KID.Moves
             ?.validateMove ===
-            "function" &&
-          typeof window.KID.Moves
-            ?.canMoveToTableau ===
-            "function" &&
-          typeof window.KID.Moves
-            ?.canMoveToFoundation ===
             "function",
 
         render:
           typeof window.KID.Render
             ?.draw ===
-            "function",
-
-        engine:
-          typeof window.KID.Engine
-            ?.createState ===
-            "function" &&
-          typeof window.KID.Engine
-            ?.newGame ===
             "function",
 
         actions:
@@ -368,12 +79,25 @@ window.KID.App = {
             "function" &&
           typeof window.KID.Actions
             ?.moveTableauStack ===
+            "function",
+
+        storage:
+          typeof window.KID.Storage
+            ?.saveGame ===
             "function" &&
-          typeof window.KID.Actions
-            ?.moveTableauToFoundation ===
+          typeof window.KID.Storage
+            ?.loadGame ===
+            "function",
+
+        engine:
+          typeof window.KID.Engine
+            ?.start ===
             "function" &&
-          typeof window.KID.Actions
-            ?.isWin ===
+          typeof window.KID.Engine
+            ?.newGame ===
+            "function" &&
+          typeof window.KID.Engine
+            ?.save ===
             "function"
       },
 
@@ -383,6 +107,12 @@ window.KID.App = {
             ?.validateState(
               state
             ) === true,
+
+        totalCards:
+          window.KID.Deal
+            ?.countCards(
+              state
+            ) ?? 0,
 
         tableauColumns:
           state?.tableau
@@ -394,58 +124,55 @@ window.KID.App = {
 
         wasteCards:
           state?.waste
-            ?.length ?? 0
+            ?.length ?? 0,
+
+        moves:
+          state?.moves ?? 0
       },
 
       render: {
         available:
           Boolean(
             renderSnapshot
-          ),
-
-        stockCount:
-          renderSnapshot
-            ?.stockCount ?? 0
+          )
       },
 
-      rules: {
-        valid:
-          rulesValid,
+      storage: {
+        available:
+          window.KID.Storage
+            ?.isAvailable() ===
+            true,
 
-        tests:
-          this.ruleTests
+        hasSavedGame:
+          window.KID.Storage
+            ?.hasSavedGame() ===
+            true
       },
 
-      actions: {
-        valid:
-          actionsValid,
-
-        tests:
-          this.actionTests
-      }
+      resumedFromSave:
+        window.KID.Engine
+          ?.resumedFromSave ===
+          true
     };
 
     this.ready =
       Object.values(
-        this.diagnostics
-          .modules
+        this.diagnostics.modules
       ).every(Boolean) &&
       this.diagnostics
         .state.valid &&
       this.diagnostics
-        .state
-        .tableauColumns === 7 &&
+        .state.totalCards === 52 &&
       this.diagnostics
-        .state
-        .stockCards === 24 &&
+        .state.tableauColumns === 7 &&
       this.diagnostics
         .render.available &&
-      rulesValid &&
-      actionsValid;
+      this.diagnostics
+        .storage.available;
 
     console.log(
       this.ready
-        ? "KID v0.4.2 system ready."
+        ? "KID v0.4.3 system ready."
         : "KID system check failed.",
       this.diagnostics
     );
@@ -463,47 +190,97 @@ window.KID.App = {
     return state;
   },
 
-  drawStock() {
+  continueGame() {
+    const savedState =
+      window.KID.Storage
+        .loadGame();
+
+    if (!savedState) {
+      return this.startNewGame();
+    }
+
     const state =
       window.KID.Engine
-        .state;
+        .replaceState(
+          savedState
+        );
+
+    this.runDiagnostics();
+
+    return state;
+  },
+
+  drawStock() {
+    const state =
+      window.KID.Engine.state;
+
+    const stockBefore =
+      state.stock.length;
+
+    const wasteBefore =
+      state.waste.length;
 
     window.KID.Actions
-      .drawFromStock(
-        state
+      .drawFromStock(state);
+
+    const changed =
+      state.stock.length !==
+        stockBefore ||
+      state.waste.length !==
+        wasteBefore;
+
+    if (changed) {
+      this.saveAfterAction(
+        true
       );
+    }
 
     return state;
   },
 
   moveWasteToFoundation() {
-    return window.KID.Actions
-      .moveWasteToFoundation(
-        window.KID.Engine
-          .state
-      );
+    const moved =
+      window.KID.Actions
+        .moveWasteToFoundation(
+          window.KID.Engine
+            .state
+        );
+
+    return this.saveAfterAction(
+      moved
+    );
   },
 
   moveWasteToTableau(
     destinationColumnIndex
   ) {
-    return window.KID.Actions
-      .moveWasteToTableau(
-        window.KID.Engine
-          .state,
-        destinationColumnIndex
-      );
+    const moved =
+      window.KID.Actions
+        .moveWasteToTableau(
+          window.KID.Engine
+            .state,
+          destinationColumnIndex
+        );
+
+    return this.saveAfterAction(
+      moved
+    );
   },
 
   moveTableauToFoundation(
     sourceColumnIndex
   ) {
-    return window.KID.Actions
-      .moveTableauToFoundation(
-        window.KID.Engine
-          .state,
-        sourceColumnIndex
-      );
+    const moved =
+      window.KID.Actions
+        .moveTableauToFoundation(
+          window.KID.Engine
+            .state,
+          sourceColumnIndex
+        );
+
+    return this.saveAfterAction(
+      moved
+    );
   },
 
   moveTableauStack(
@@ -511,14 +288,19 @@ window.KID.App = {
     sourceCardIndex,
     destinationColumnIndex
   ) {
-    return window.KID.Actions
-      .moveTableauStack(
-        window.KID.Engine
-          .state,
-        sourceColumnIndex,
-        sourceCardIndex,
-        destinationColumnIndex
-      );
+    const moved =
+      window.KID.Actions
+        .moveTableauStack(
+          window.KID.Engine
+            .state,
+          sourceColumnIndex,
+          sourceCardIndex,
+          destinationColumnIndex
+        );
+
+    return this.saveAfterAction(
+      moved
+    );
   },
 
   isWin() {
@@ -530,21 +312,12 @@ window.KID.App = {
   },
 
   reset() {
-    const state =
-      this.startNewGame();
+    return this.startNewGame();
+  },
 
-    console.log(
-      "KID game reset complete.",
-      {
-        tableauColumns:
-          state.tableau.length,
-
-        stockCards:
-          state.stock.length
-      }
-    );
-
-    return state;
+  clearSavedGame() {
+    return window.KID.Engine
+      .clearSavedGame();
   }
 };
 
