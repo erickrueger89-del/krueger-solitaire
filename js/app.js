@@ -1,10 +1,11 @@
 window.KID = window.KID || {};
 
-window.KID.version = "0.4.0";
+window.KID.version = "0.4.1";
 
 window.KID.App = {
   diagnostics: null,
   ruleTests: null,
+  actionTests: null,
   ready: false,
 
   runRuleTests() {
@@ -113,43 +114,114 @@ window.KID.App = {
     return Object.values(this.ruleTests).every(Boolean);
   },
 
+  runActionTests() {
+    const testState =
+      window.KID.Engine.createState();
+
+    const startingStock =
+      testState.stock.length;
+
+    window.KID.Actions.drawFromStock(testState);
+
+    const wasteTop =
+      window.KID.Actions.getWasteTop(testState);
+
+    this.actionTests = {
+      stockStartedWith24:
+        startingStock === 24,
+
+      stockReducedAfterDraw:
+        testState.stock.length === 23,
+
+      wasteIncreasedAfterDraw:
+        testState.waste.length === 1,
+
+      wasteTopAvailable:
+        Boolean(wasteTop),
+
+      wasteTopFaceUp:
+        wasteTop?.faceUp === true,
+
+      invalidWasteFoundationMoveRejected:
+        typeof window.KID.Actions
+          .moveWasteToFoundation(testState) === "boolean"
+    };
+
+    return Object.values(
+      this.actionTests
+    ).every(Boolean);
+  },
+
   runDiagnostics() {
-    const state = window.KID.Engine?.state;
-    const renderSnapshot = window.KID.Engine?.lastRender;
-    const rulesValid = this.runRuleTests();
+    const state =
+      window.KID.Engine?.state;
+
+    const renderSnapshot =
+      window.KID.Engine?.lastRender;
+
+    const rulesValid =
+      this.runRuleTests();
+
+    const actionsValid =
+      this.runActionTests();
 
     this.diagnostics = {
       version: window.KID.version,
 
       modules: {
         cards:
-          typeof window.KID.Cards?.createDeck === "function" &&
-          typeof window.KID.Cards?.validateDeck === "function",
+          typeof window.KID.Cards
+            ?.createDeck === "function" &&
+          typeof window.KID.Cards
+            ?.validateDeck === "function",
 
         shuffle:
-          typeof window.KID.Shuffle?.shuffle === "function",
+          typeof window.KID.Shuffle
+            ?.shuffle === "function",
 
         deal:
-          typeof window.KID.Deal?.create === "function" &&
-          typeof window.KID.Deal?.validateState === "function",
+          typeof window.KID.Deal
+            ?.create === "function" &&
+          typeof window.KID.Deal
+            ?.validateState === "function",
 
         moves:
-          typeof window.KID.Moves?.validateMove === "function" &&
-          typeof window.KID.Moves?.canMoveToTableau === "function" &&
-          typeof window.KID.Moves?.canMoveToFoundation === "function",
+          typeof window.KID.Moves
+            ?.validateMove === "function" &&
+          typeof window.KID.Moves
+            ?.canMoveToTableau === "function" &&
+          typeof window.KID.Moves
+            ?.canMoveToFoundation === "function",
 
         render:
-          typeof window.KID.Render?.draw === "function" &&
-          typeof window.KID.Render?.createSnapshot === "function",
+          typeof window.KID.Render
+            ?.draw === "function" &&
+          typeof window.KID.Render
+            ?.createSnapshot === "function",
 
         engine:
-          typeof window.KID.Engine?.start === "function" &&
-          typeof window.KID.Engine?.newGame === "function"
+          typeof window.KID.Engine
+            ?.start === "function" &&
+          typeof window.KID.Engine
+            ?.newGame === "function" &&
+          typeof window.KID.Engine
+            ?.createState === "function",
+
+        actions:
+          typeof window.KID.Actions
+            ?.drawFromStock === "function" &&
+          typeof window.KID.Actions
+            ?.recycleWaste === "function" &&
+          typeof window.KID.Actions
+            ?.getWasteTop === "function" &&
+          typeof window.KID.Actions
+            ?.moveWasteToFoundation === "function"
       },
 
       state: {
         valid:
-          window.KID.Deal?.validateState(state) === true,
+          window.KID.Deal
+            ?.validateState(state) === true,
 
         tableauColumns:
           state?.tableau?.length ?? 0,
@@ -170,13 +242,19 @@ window.KID.App = {
 
         foundationCount:
           Object.keys(
-            renderSnapshot?.foundationCounts || {}
+            renderSnapshot
+              ?.foundationCounts || {}
           ).length
       },
 
       rules: {
         valid: rulesValid,
         tests: this.ruleTests
+      },
+
+      actions: {
+        valid: actionsValid,
+        tests: this.actionTests
       }
     };
 
@@ -185,14 +263,17 @@ window.KID.App = {
         this.diagnostics.modules
       ).every(Boolean) &&
       this.diagnostics.state.valid &&
-      this.diagnostics.state.tableauColumns === 7 &&
-      this.diagnostics.state.stockCards === 24 &&
+      this.diagnostics.state
+        .tableauColumns === 7 &&
+      this.diagnostics.state
+        .stockCards === 24 &&
       this.diagnostics.render.available &&
-      this.diagnostics.rules.valid;
+      this.diagnostics.rules.valid &&
+      this.diagnostics.actions.valid;
 
     console.log(
       this.ready
-        ? "KID v0.4.0 system ready."
+        ? "KID v0.4.1 system ready."
         : "KID system check failed.",
       this.diagnostics
     );
@@ -207,6 +288,31 @@ window.KID.App = {
     this.runDiagnostics();
 
     return state;
+  },
+
+  drawStock() {
+    const state =
+      window.KID.Engine.state;
+
+    window.KID.Actions
+      .drawFromStock(state);
+
+    this.runDiagnostics();
+
+    return state;
+  },
+
+  moveWasteToFoundation() {
+    const state =
+      window.KID.Engine.state;
+
+    const moved =
+      window.KID.Actions
+        .moveWasteToFoundation(state);
+
+    this.runDiagnostics();
+
+    return moved;
   },
 
   reset() {
