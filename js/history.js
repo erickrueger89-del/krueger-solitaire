@@ -14,27 +14,45 @@ window.KID.History = {
       return window.KID.Storage.clone(state);
     }
 
-    return JSON.parse(JSON.stringify(state));
+    return JSON.parse(
+      JSON.stringify(state)
+    );
   },
 
   isValidState(state) {
-    return (
+    return Boolean(
       state &&
       window.KID.Deal?.validateState(state) === true
     );
   },
 
-  reset(state) {
+  trimStack(stack) {
+    while (
+      stack.length >
+      this.maximumEntries
+    ) {
+      stack.shift();
+    }
+
+    return stack;
+  },
+
+  reset(state = null) {
     this.undoStack = [];
     this.redoStack = [];
 
-    if (this.isValidState(state)) {
-      this.undoStack.push(
-        this.cloneState(state)
+    if (
+      state &&
+      !this.isValidState(state)
+    ) {
+      console.warn(
+        "KID history reset received an invalid state."
       );
     }
 
-    console.log("KID history reset.");
+    console.log(
+      "KID history reset."
+    );
 
     return true;
   },
@@ -48,12 +66,9 @@ window.KID.History = {
       this.cloneState(state)
     );
 
-    if (
-      this.undoStack.length >
-      this.maximumEntries
-    ) {
-      this.undoStack.shift();
-    }
+    this.trimStack(
+      this.undoStack
+    );
 
     this.redoStack = [];
 
@@ -61,7 +76,9 @@ window.KID.History = {
   },
 
   discardCheckpoint() {
-    if (this.undoStack.length <= 1) {
+    if (
+      this.undoStack.length === 0
+    ) {
       return false;
     }
 
@@ -71,39 +88,50 @@ window.KID.History = {
   },
 
   canUndo() {
-    return this.undoStack.length > 1;
+    return (
+      this.undoStack.length > 0
+    );
   },
 
   canRedo() {
-    return this.redoStack.length > 0;
+    return (
+      this.redoStack.length > 0
+    );
   },
 
   undo(currentState) {
     if (
-      !this.isValidState(currentState) ||
+      !this.isValidState(
+        currentState
+      ) ||
       !this.canUndo()
     ) {
       return null;
     }
 
-    const currentSnapshot =
+    const previousState =
       this.undoStack.pop();
 
     this.redoStack.push(
-      this.cloneState(currentSnapshot)
+      this.cloneState(
+        currentState
+      )
     );
 
-    const previousState =
-      this.undoStack[
-        this.undoStack.length - 1
-      ];
+    this.trimStack(
+      this.redoStack
+    );
 
-    return this.cloneState(previousState);
+    return this.cloneState(
+      previousState
+    );
   },
 
   redo(currentState) {
     if (
-      !this.isValidState(currentState) ||
+      !this.isValidState(
+        currentState
+      ) ||
       !this.canRedo()
     ) {
       return null;
@@ -113,20 +141,46 @@ window.KID.History = {
       this.redoStack.pop();
 
     this.undoStack.push(
-      this.cloneState(restoredState)
+      this.cloneState(
+        currentState
+      )
     );
 
-    return this.cloneState(restoredState);
+    this.trimStack(
+      this.undoStack
+    );
+
+    return this.cloneState(
+      restoredState
+    );
+  },
+
+  clearRedo() {
+    this.redoStack = [];
+
+    return true;
   },
 
   getStatus() {
     return {
-      canUndo: this.canUndo(),
-      canRedo: this.canRedo(),
-      undoEntries: this.undoStack.length,
-      redoEntries: this.redoStack.length
+      canUndo:
+        this.canUndo(),
+
+      canRedo:
+        this.canRedo(),
+
+      undoEntries:
+        this.undoStack.length,
+
+      redoEntries:
+        this.redoStack.length,
+
+      maximumEntries:
+        this.maximumEntries
     };
   }
 };
 
-console.log("History module loaded.");
+console.log(
+  "Reliable History module loaded."
+);
