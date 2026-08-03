@@ -2,32 +2,64 @@ window.KID = window.KID || {};
 
 window.KID.version = "0.3.1";
 
-const state = window.KID.Engine?.state;
+window.KID.Engine = {
+  state: null,
+  lastRender: null,
 
-window.KID.diagnostics = {
-  modules: {
-    cards: typeof window.KID.Cards?.createDeck === "function",
-    shuffle: typeof window.KID.Shuffle?.shuffle === "function",
-    deal: typeof window.KID.Deal?.create === "function",
-    render: typeof window.KID.Render?.draw === "function",
-    engine: Boolean(window.KID.Engine)
+  createState() {
+    const deck = window.KID.Cards.createDeck();
+
+    if (!window.KID.Cards.validateDeck(deck)) {
+      throw new Error("KID deck validation failed.");
+    }
+
+    const shuffledDeck = window.KID.Shuffle.shuffle(deck);
+    const state = window.KID.Deal.create(shuffledDeck);
+
+    if (!window.KID.Deal.validateState(state)) {
+      throw new Error("KID game-state validation failed.");
+    }
+
+    return state;
   },
 
-  state: {
-    tableauColumns: state?.tableau?.length ?? 0,
-    stockCards: state?.stock?.length ?? 0,
-    wasteCards: state?.waste?.length ?? 0
+  start() {
+    this.state = this.createState();
+    this.lastRender = window.KID.Render.draw(this.state);
+
+    if (!this.lastRender) {
+      throw new Error("KID render failed during startup.");
+    }
+
+    console.log("KID Engine started.");
+    console.log(
+      "Tableau columns:",
+      this.state.tableau.length,
+      "Stock cards:",
+      this.state.stock.length
+    );
+
+    return this.state;
+  },
+
+  newGame() {
+    this.state = this.createState();
+    this.lastRender = window.KID.Render.draw(this.state);
+
+    if (!this.lastRender) {
+      throw new Error("KID render failed during new game.");
+    }
+
+    return this.state;
+  },
+
+  about() {
+    return {
+      name: "Krueger Solitaire",
+      developer: "Krueger Interactive Developments",
+      version: window.KID.version
+    };
   }
 };
 
-window.KID.ready =
-  Object.values(window.KID.diagnostics.modules).every(Boolean) &&
-  window.KID.diagnostics.state.tableauColumns === 7 &&
-  window.KID.diagnostics.state.stockCards === 24;
-
-console.log(
-  window.KID.ready
-    ? "KID system ready."
-    : "KID system check failed.",
-  window.KID.diagnostics
-);
+window.KID.Engine.start();
