@@ -13,14 +13,24 @@ window.KID.Engine = {
 
     console.log("KID Engine started.");
     console.log(
-      "Tableau columns:",
-      this.state.tableau.length,
-      "Stock cards:",
-      this.state.stock.length
+        "Tableau columns:",
+        this.state.tableau.length,
+        "Stock cards:",
+        this.state.stock.length
     );
-  },
+},
 
-  about() {
+newGame() {
+    const deck = window.KID.Cards.createDeck();
+    const shuffledDeck = window.KID.Shuffle.shuffle(deck);
+
+    this.state = window.KID.Deal.create(shuffledDeck);
+
+    return this.state;
+    },
+    
+about() {
+    
     return {
       name: "Krueger Solitaire",
       developer: "Krueger Interactive Developments",
