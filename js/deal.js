@@ -2,6 +2,10 @@ window.KID = window.KID || {};
 
 window.KID.Deal = {
   create(deck) {
+    if (!window.KID.Cards.validateDeck(deck)) {
+      throw new Error("Cannot deal an invalid deck.");
+    }
+
     const cards = [...deck];
     const tableau = Array.from({ length: 7 }, () => []);
 
@@ -16,7 +20,7 @@ window.KID.Deal = {
       }
     }
 
-    return {
+    const state = {
       tableau,
       stock: cards,
       waste: [],
@@ -27,6 +31,21 @@ window.KID.Deal = {
         "♣": []
       }
     };
+
+    const tableauCardCount = state.tableau.reduce(
+      (total, column) => total + column.length,
+      0
+    );
+
+    if (
+      state.tableau.length !== 7 ||
+      tableauCardCount !== 28 ||
+      state.stock.length !== 24
+    ) {
+      throw new Error("Klondike deal validation failed.");
+    }
+
+    return state;
   }
 };
 
