@@ -1,16 +1,45 @@
 window.KID = window.KID || {};
 
-window.KID.version = "0.4.3";
+window.KID.version = "0.5.0";
 
 window.KID.App = {
   diagnostics: null,
   ready: false,
 
-  saveAfterAction(result) {
+  initializeHistory() {
+    const state =
+      window.KID.Engine?.state;
+
+    if (
+      state &&
+      window.KID.Deal
+        .validateState(state)
+    ) {
+      window.KID.History
+        .reset(state);
+
+      return true;
+    }
+
+    return false;
+  },
+
+  prepareAction() {
+    const state =
+      window.KID.Engine.state;
+
+    return window.KID.History
+      .checkpoint(state);
+  },
+
+  finishAction(result) {
     if (
       result === false ||
       result === null
     ) {
+      window.KID.History
+        .discardCheckpoint();
+
       return result;
     }
 
@@ -24,6 +53,32 @@ window.KID.App = {
       .save();
 
     return result;
+  },
+
+  runAction(action) {
+    if (typeof action !== "function") {
+      return false;
+    }
+
+    this.prepareAction();
+
+    try {
+      const result = action();
+
+      return this.finishAction(
+        result
+      );
+    } catch (error) {
+      window.KID.History
+        .discardCheckpoint();
+
+      console.error(
+        "KID action failed:",
+        error
+      );
+
+      return false;
+    }
   },
 
   runDiagnostics() {
@@ -58,9 +113,6 @@ window.KID.App = {
             "function" &&
           typeof window.KID.Deal
             ?.validateState ===
-            "function" &&
-          typeof window.KID.Deal
-            ?.validateInitialDeal ===
             "function",
 
         moves:
@@ -89,15 +141,23 @@ window.KID.App = {
             ?.loadGame ===
             "function",
 
+        history:
+          typeof window.KID.History
+            ?.checkpoint ===
+            "function" &&
+          typeof window.KID.History
+            ?.undo ===
+            "function" &&
+          typeof window.KID.History
+            ?.redo ===
+            "function",
+
         engine:
           typeof window.KID.Engine
             ?.start ===
             "function" &&
           typeof window.KID.Engine
             ?.newGame ===
-            "function" &&
-          typeof window.KID.Engine
-            ?.save ===
             "function"
       },
 
@@ -149,10 +209,9 @@ window.KID.App = {
             true
       },
 
-      resumedFromSave:
-        window.KID.Engine
-          ?.resumedFromSave ===
-          true
+      history:
+        window.KID.History
+          ?.getStatus() || null
     };
 
     this.ready =
@@ -172,7 +231,7 @@ window.KID.App = {
 
     console.log(
       this.ready
-        ? "KID v0.4.3 system ready."
+        ? "KID v0.5.0 system ready."
         : "KID system check failed.",
       this.diagnostics
     );
@@ -184,6 +243,9 @@ window.KID.App = {
     const state =
       window.KID.Engine
         .newGame();
+
+    window.KID.History
+      .reset(state);
 
     this.runDiagnostics();
 
@@ -205,81 +267,75 @@ window.KID.App = {
           savedState
         );
 
+    window.KID.History
+      .reset(state);
+
     this.runDiagnostics();
 
     return state;
   },
 
   drawStock() {
-    const state =
-      window.KID.Engine.state;
+    return this.runAction(
+      () => {
+        const state =
+          window.KID.Engine.state;
 
-    const stockBefore =
-      state.stock.length;
+        const stockBefore =
+          state.stock.length;
 
-    const wasteBefore =
-      state.waste.length;
+        const wasteBefore =
+          state.waste.length;
 
-    window.KID.Actions
-      .drawFromStock(state);
+        window.KID.Actions
+          .drawFromStock(state);
 
-    const changed =
-      state.stock.length !==
-        stockBefore ||
-      state.waste.length !==
-        wasteBefore;
-
-    if (changed) {
-      this.saveAfterAction(
-        true
-      );
-    }
-
-    return state;
+        return (
+          state.stock.length !==
+            stockBefore ||
+          state.waste.length !==
+            wasteBefore
+        );
+      }
+    );
   },
 
   moveWasteToFoundation() {
-    const moved =
-      window.KID.Actions
-        .moveWasteToFoundation(
-          window.KID.Engine
-            .state
-        );
-
-    return this.saveAfterAction(
-      moved
+    return this.runAction(
+      () =>
+        window.KID.Actions
+          .moveWasteToFoundation(
+            window.KID.Engine
+              .state
+          )
     );
   },
 
   moveWasteToTableau(
     destinationColumnIndex
   ) {
-    const moved =
-      window.KID.Actions
-        .moveWasteToTableau(
-          window.KID.Engine
-            .state,
-          destinationColumnIndex
-        );
-
-    return this.saveAfterAction(
-      moved
+    return this.runAction(
+      () =>
+        window.KID.Actions
+          .moveWasteToTableau(
+            window.KID.Engine
+              .state,
+            destinationColumnIndex
+          )
     );
   },
 
   moveTableauToFoundation(
     sourceColumnIndex
   ) {
-    const moved =
-      window.KID.Actions
-        .moveTableauToFoundation(
-          window.KID.Engine
-            .state,
-          sourceColumnIndex
-        );
-
-    return this.saveAfterAction(
-      moved
+    return this.runAction(
+      () =>
+        window.KID.Actions
+          .moveTableauToFoundation(
+            window.KID.Engine
+              .state,
+            sourceColumnIndex
+          )
     );
   },
 
@@ -288,19 +344,70 @@ window.KID.App = {
     sourceCardIndex,
     destinationColumnIndex
   ) {
-    const moved =
-      window.KID.Actions
-        .moveTableauStack(
+    return this.runAction(
+      () =>
+        window.KID.Actions
+          .moveTableauStack(
+            window.KID.Engine
+              .state,
+            sourceColumnIndex,
+            sourceCardIndex,
+            destinationColumnIndex
+          )
+    );
+  },
+
+  undo() {
+    const previousState =
+      window.KID.History
+        .undo(
           window.KID.Engine
-            .state,
-          sourceColumnIndex,
-          sourceCardIndex,
-          destinationColumnIndex
+            .state
         );
 
-    return this.saveAfterAction(
-      moved
+    if (!previousState) {
+      return false;
+    }
+
+    window.KID.Engine
+      .replaceState(
+        previousState
+      );
+
+    console.log(
+      "KID move undone."
     );
+
+    return true;
+  },
+
+  redo() {
+    const restoredState =
+      window.KID.History
+        .redo(
+          window.KID.Engine
+            .state
+        );
+
+    if (!restoredState) {
+      return false;
+    }
+
+    window.KID.Engine
+      .replaceState(
+        restoredState
+      );
+
+    console.log(
+      "KID move restored."
+    );
+
+    return true;
+  },
+
+  getHistoryStatus() {
+    return window.KID.History
+      .getStatus();
   },
 
   isWin() {
@@ -320,6 +427,9 @@ window.KID.App = {
       .clearSavedGame();
   }
 };
+
+window.KID.App
+  .initializeHistory();
 
 window.KID.App
   .runDiagnostics();
