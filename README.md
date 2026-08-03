@@ -1,102 +1,60 @@
-# Krueger Interactive Development
+# Krueger Interactive Developments
+
 ## Building Reality
 
-Krueger Interactive is an independent game development studio dedicated to creating premium, offline-first games that respect players.
-
-No advertisements.
-
-No subscriptions.
-
-No intrusive tracking.
-
-Our goal is simple:
-
-> Build games we enjoy playing ourselves.
-
----
-
-# Current Project
-
-## Krueger Solitaire
-
-Status:
-
-🟢 Active Development
-
-Version:
-
-0.1 Prototype
-
-Platform:
-
-- iPhone
-
-- iPad
-
-- Progressive Web App
-
-Features
-
-- Offline play
+Krueger Interactive Developments—KID’s—is an independent game-development project focused on polished, offline-first games that respect players.
 
 - No advertisements
-
-- Fast loading
-
+- No subscriptions
+- No intrusive tracking
+- No required account
 - Unlimited play
 
----
+—
 
-# Roadmap
+# Krueger Solitaire
 
-## Version 1.0
+Krueger Solitaire is a mobile-friendly Klondike Solitaire game designed primarily for iPhone, iPad, and modern web browsers.
 
-- Professional card artwork
+## Current Status
 
-- Smooth animations
+**Version:** 1.0  
+**Status:** Active Development  
+**Platform:** Progressive Web App
 
-- Draw 1 / Draw 3
+## Current Features
 
-- Unlimited Undo
+- Klondike Solitaire gameplay
+- Draw 1 and Draw 3 modes
+- Touch and drag controls
+- Tap-to-move controls
+- Undo support
+- Save and continue game
+- Game statistics
+- Multiple visual themes
+- Hint system
+- Move counter
+- Game timer
+- Installable Progressive Web App
+- Offline-friendly design
+- No advertisements
+- No subscriptions
 
-- Statistics
+## Technology
 
-- Save Game
+- HTML
+- CSS
+- JavaScript
+- GitHub Pages
+- Progressive Web App architecture
+- Local browser storage
 
-- Settings
+## Project Structure
 
-- Themes
-
-## Future Games
-
-- Spider Solitaire
-
-- FreeCell
-
-- Hearts
-
-- Pyramid
-
-- Sudoku
-
-- Blackjack
-
-## Original Games
-
-- Krueger Homestead
-
-- Project Atlas (working title)
-
-- Project Frontier (working title)
-
----
-
-# Philosophy
-
-Great games don't need advertisements to be successful.
-
-They need thoughtful design.
-
----
-
-© Krueger Interactive
+```text
+krueger-solitaire/
+├── .github/workflows/
+├── css/
+├── js/
+├── index.html
+└── README.md
